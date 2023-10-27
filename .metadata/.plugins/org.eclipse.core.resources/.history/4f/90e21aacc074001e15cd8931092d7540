@@ -1,0 +1,33 @@
+package threads.b_medium.exemple.error;
+
+public class ConcurrentSafeExample {
+    public static void main(String[] args) {
+        List<String> list = new CopyOnWriteArrayList<>();
+
+        // Thread 1: Adds items to the list
+        new Thread(() -> {
+            while (true) {
+                list.add("Item");
+                try {
+                    Thread.sleep(100);  // Sleep for a short time
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        // Thread 2: Iterates over the list and reads items
+        new Thread(() -> {
+            while (true) {
+                for (String item : list) {
+                    System.out.println(item);
+                    try {
+                        Thread.sleep(50);  // Sleep for a short time
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}

@@ -1,0 +1,5 @@
+package threads.simple;
+
+public class Ba_MultiThread_Runnable {
+
+}

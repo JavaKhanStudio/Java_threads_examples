@@ -1,0 +1,38 @@
+package threads.b_medium.exemple;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class Bb_lambda_withStop {
+	public static void main(String[] args) {
+ 
+		AtomicBoolean threadShouldRun = new AtomicBoolean(true); 
+		
+		for (int i = 0; threadShouldRun.get() ; i++) {
+			
+			String message = "Hello world! I am Thread " + ((char)('A' + i)) ; 
+			new Thread(() -> {
+				int counter = 0 ; 
+	            while (threadShouldRun.get()) {
+	                System.out.println(message + " Number " + counter++);
+	                try {
+	                    Thread.sleep(1000);  
+	                } catch (InterruptedException e) {
+	                    e.printStackTrace();
+	                }
+	            }
+	        }).start();
+		}
+        
+
+        new Thread(() -> {
+            System.out.println("I'll kill you all !");
+            try {
+                Thread.sleep(10000);  
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            threadShouldRun.set(false) ; 
+            System.out.println("DIE");
+        }).start();
+    }
+}

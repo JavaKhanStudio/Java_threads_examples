@@ -1,0 +1,73 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class CoreSelector {
+    private static int coreCount = Runtime.getRuntime().availableProcessors();
+    private static JSlider slider;
+    private static AtomicBoolean running = new AtomicBoolean(false);
+    private static Thread[] threads;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Select Number of Cores");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 200);
+        frame.setLayout(new GridLayout(3, 1));
+
+        JLabel label = new JLabel("Number of available cores: " + coreCount, JLabel.CENTER);
+        frame.add(label);
+
+        slider = new JSlider(JSlider.HORIZONTAL, 1, coreCount, coreCount);
+        slider.setMajorTickSpacing(1);
+        slider.setPaintTicks(true);
+        slider.setPaintLabels(true);
+        frame.add(slider);
+
+        JButton startButton = new JButton("Start Threads");
+        startButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                stopThreads();
+                startThreads(slider.getValue());
+            }
+        });
+        frame.add(startButton);
+
+        frame.setVisible(true);
+    }
+
+    private static void startThreads(int num) {
+        running.set(true);
+        threads = new Thread[num];
+
+        for (int i = 0; i < num; i++) {
+            int threadNumber = i;
+            threads[i] = new Thread(() -> {
+                int count = 0;
+                while (running.get()) {
+                    count++;
+                    System.out.println("This is thread \"" + (char) ('A' + threadNumber) + "\", sending message number \"" + count + "\"");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            threads[i].start();
+        }
+    }
+
+    private static void stopThreads() {
+        running.set(false);
+        if (threads != null) {
+            for (Thread thread : threads) {
+                try {
+                    thread.join(100);  // Give some time for the threads to finish their current iteration
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}

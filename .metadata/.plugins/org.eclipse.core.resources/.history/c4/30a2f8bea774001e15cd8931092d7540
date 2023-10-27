@@ -1,0 +1,133 @@
+package threads;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class CoreSelectorSyn {
+    private static int coreCount = Runtime.getRuntime().availableProcessors();
+    private static JSlider slider;
+    private static AtomicBoolean running = new AtomicBoolean(false);
+    private static Thread[] threads;
+    private static AtomicInteger firstToFire = new AtomicInteger(-1); // Indicates which thread fired first
+    
+    private static int[] firstFiredCount;
+    private static JFrame resultFrame;
+    private static JLabel[] resultLabels;
+    
+    private static int firedCount = 0;;
+    static JLabel firedLabel;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Select Number of Cores");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 200);
+        frame.setLayout(new GridLayout(3, 1));
+
+        JLabel label = new JLabel("Number of available cores: " + coreCount, JLabel.CENTER);
+        frame.add(label);
+
+        slider = new JSlider(JSlider.HORIZONTAL, 1, coreCount, coreCount);
+        slider.setMajorTickSpacing(1);
+        slider.setPaintTicks(true);
+        slider.setPaintLabels(true);
+        frame.add(slider);
+
+        JButton startButton = new JButton("Start Threads");
+        startButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                stopThreads();
+                startThreads(slider.getValue());
+                createResultsWindow(slider.getValue());
+            }
+        });
+        frame.add(startButton);
+
+        frame.setVisible(true);
+    }
+
+    private static void startThreads(int num) {
+        running.set(true);
+        threads = new Thread[num];
+        firstFiredCount = new int[num];
+
+        for (int i = 0; i < num; i++) {
+            int threadNumber = i;
+            threads[i] = new Thread(() -> {
+                int count = 0;
+                while (running.get()) {
+                    count++;
+                    if (firstToFire.compareAndSet(-1, threadNumber)) {
+                        firstFiredCount[threadNumber]++;
+                    }
+
+                    System.out.println("This is thread \"" + (char) ('A' + threadNumber) + "\", sending message number \"" + count + "\"");
+
+                    try {
+                        if (count % num == 0) {
+                            Thread.sleep(1000);  // Let other threads finish their print
+                            firstToFire.set(-1);  // Reset for next round
+                            firedCount ++ ;
+                        } else {
+                            Thread.sleep(1000);
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            threads[i].start();
+        }
+    }
+
+    private static void stopThreads() {
+        running.set(false);
+        if (threads != null) {
+            for (Thread thread : threads) {
+                try {
+                    thread.join(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static void createResultsWindow(int numThreads) {
+        if (resultFrame != null) {
+            resultFrame.dispose();
+        }
+
+        resultFrame = new JFrame("First Thread to Fire");
+        resultFrame.setSize(300, 20 * numThreads + 50);
+        resultFrame.setLayout(new GridLayout(numThreads + 1, 1));
+        
+        firedLabel = new JLabel("Total Cycles: " + firedCount, JLabel.CENTER);
+        resultFrame.add(firedLabel);
+
+        JLabel title = new JLabel("First Thread to Fire", JLabel.CENTER);
+        resultFrame.add(title);
+
+        resultLabels = new JLabel[numThreads];
+        for (int i = 0; i < numThreads; i++) {
+            resultLabels[i] = new JLabel((char) ('A' + i) + " : " + firstFiredCount[i], JLabel.CENTER);
+            resultFrame.add(resultLabels[i]);
+        }
+        
+  
+        Timer timer = new Timer(100, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (int i = 0; i < numThreads; i++) {
+                    resultLabels[i].setText((char) ('A' + i) + " : " + firstFiredCount[i]);
+                    firedLabel.setText("Total Cycles: " + firedCount, JLabel.CENTER) ;
+                }
+            }
+        });
+        timer.start();
+
+        resultFrame.setVisible(true);
+    }
+}

@@ -1,0 +1,38 @@
+package threads.simple;
+
+public class Ba_MultiThread_Runnable {
+	
+	public static void main(String[] args) {
+        String[] threadNames = {"Thread A", "Thread B", "Thread C"};
+
+        for (String threadName : threadNames) {
+            startThreadWithName(threadName);
+        }
+    }
+
+    public static void startThreadWithName(String threadName) {
+        Thread thread = new Thread(new CustomRunnable(threadName));
+        thread.start();
+    }
+
+    static class CustomRunnable implements Runnable {
+        private final String threadName;
+
+        CustomRunnable(String threadName) {
+            this.threadName = threadName;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                System.out.println("Hello world! I am " + threadName);
+                try {
+                    Thread.sleep(1000);  // Sleeps for 1000 milliseconds (1 second)
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+}

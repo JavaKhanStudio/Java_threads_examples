@@ -1,0 +1,54 @@
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import java.awt.*;
+import java.awt.event.*;
+
+public class CoreSelector {
+    private static int coreCount = Runtime.getRuntime().availableProcessors();
+    private static JSlider slider;
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Select Number of Cores");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 150);
+        frame.setLayout(new GridLayout(2, 1));
+
+        JLabel label = new JLabel("Number of available cores: " + coreCount, JLabel.CENTER);
+        frame.add(label);
+
+        slider = new JSlider(JSlider.HORIZONTAL, 1, coreCount, coreCount);
+        slider.setMajorTickSpacing(1);
+        slider.setPaintTicks(true);
+        slider.setPaintLabels(true);
+        frame.add(slider);
+
+        slider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                int selectedCores = slider.getValue();
+                startThreads(selectedCores);
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    private static void startThreads(int num) {
+        for (int i = 0; i < num; i++) {
+            int threadNumber = i;
+            new Thread(() -> {
+                int count = 0;
+                while (true) {
+                    count++;
+                    System.out.println("This is thread \"" + (char) ('A' + threadNumber) + "\", sending message number \"" + count + "\"");
+                    try {
+                        Thread.sleep(1000);  // Pause for a second before the next print
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+    }
+}
